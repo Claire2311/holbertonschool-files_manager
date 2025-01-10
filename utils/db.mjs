@@ -8,17 +8,13 @@ class DBClient {
 
     this.client = new MongoClient(`mongodb://${DB_HOST}:${DB_PORT}`, { useNewUrlParser: true, useUnifiedTopology: true });
 
-    this.client.connect((err) => {
-      if (err) {
-        console.error('Failed to connect to MongoDB', err);
-      } else {
-        this.database = this.client.db(DB_DATABASE);
-      }
-    });
+    this.client.connect()
+      .then(() => { this.database = this.client.db(DB_DATABASE); })
+      .catch((err) => { console.error(err); });
   }
 
   isAlive() {
-    return this.client.isConnected();
+    return (this.client.topology && this.client.topology.isConnected()) || false;
   }
 
   async nbUsers() {
