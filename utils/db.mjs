@@ -14,8 +14,12 @@ class DBClient {
   }
 
   isAlive() {
-    return (this.client.topology && this.client.topology.isConnected()) || false;
+    return this.client.isConnected();
   }
+
+  // isAlive() {
+  //   return (this.client.topology && this.client.topology.isConnected()) || false;
+  // }
 
   async nbUsers() {
     const nbUsers = await this.database.collection('users').countDocuments();
