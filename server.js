@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import router from './routes/index';
 
-const PORT = parseInt(process.env.APP_PORT || '5000', 10);
+const PORT = parseInt(process.env.APP_PORT || '1245', 10);
 
 const app = express();
 
@@ -15,8 +16,6 @@ app.listen(PORT, (err) => {
 });
 
 // load all routes from the file routes/index.js
-const router = require('./routes/index');
-
 app.use(router);
 
-module.exports = app;
+export default app;

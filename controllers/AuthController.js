@@ -1,8 +1,8 @@
-const { Buffer } = require('node:buffer');
-const sha1 = require('sha1');
-const { v4: uuidv4 } = require('uuid');
-const dbClient = require('../utils/db');
-const redisClient = require('../utils/redis');
+import { Buffer } from 'node:buffer';
+import sha1 from 'sha1';
+import { v4 as uuidv4 } from 'uuid';
+import dbClient from '../utils/db';
+import redisClient from '../utils/redis';
 
 async function getConnect(req, res) {
   const authHeader = req.headers.authorization;
@@ -43,4 +43,4 @@ async function getDisconnect(req, res) {
   res.status(204);
 }
 
-module.exports = { getConnect, getDisconnect };
+export default { getConnect, getDisconnect };

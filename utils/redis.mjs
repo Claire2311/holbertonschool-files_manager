@@ -1,8 +1,5 @@
-const { promisify } = require('util');
-const redis = require('redis');
-
-// import { promisify } from 'util';
-// import redis from 'redis';
+import { promisify } from 'util';
+import redis from 'redis';
 
 class RedisClient {
   constructor() {
@@ -10,6 +7,7 @@ class RedisClient {
     this.getAsync = promisify(this.client.get).bind(this.client);
     this.setAsync = promisify(this.client.set).bind(this.client);
     this.expireAsync = promisify(this.client.expire).bind(this.client);
+    this.delAsync = promisify(this.client.del).bind(this.client);
     this.client.on('error', (err) => {
       console.log(`Error ${err}`);
     });
@@ -30,11 +28,10 @@ class RedisClient {
   }
 
   async del(key) {
-    this.client.del(key);
+    await this.delAsync(key);
   }
 }
 
 const redisClient = new RedisClient();
 
-// export default redisClient;
-module.exports = redisClient;
+export default redisClient;

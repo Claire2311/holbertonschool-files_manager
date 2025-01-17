@@ -1,5 +1,7 @@
-const sha1 = require('sha1');
-const dbClient = require('../utils/db');
+import sha1 from 'sha1';
+import { ObjectId } from 'mongodb';
+import dbClient from '../utils/db';
+import redisClient from '../utils/redis';
 
 async function postNew(req, res) {
   const { email, password } = req.body;
@@ -17,7 +19,6 @@ async function postNew(req, res) {
   }
 
   try {
-    // const database = client.db("sample_mflix");
     const users = dbClient.database.collection('users');
     const query = { email };
 
@@ -39,8 +40,19 @@ async function postNew(req, res) {
   }
 }
 
-module.exports = { postNew };
+async function getMe(req, res) {
+  const token = req.headers['x-token'];
 
-// return res.status(400).send({
-//     message: 'This is an error!'
-//  });
+  const userId = await redisClient.get(`auth_${token}`);
+
+  const users = dbClient.database.collection('users');
+  const user = await users.findOne({ _id: new ObjectId(userId) });
+
+  if (!user) {
+    res.status(400).json({ error: 'Unauthorized' });
+  }
+
+  res.status(200).json({ id: userId, email: user.email });
+}
+
+export default { postNew, getMe };
