@@ -17,7 +17,6 @@ async function getConnect(req, res) {
 
   const users = dbClient.database.collection('users');
   const existingUser = await users.findOne({ email, password: sha1(password) });
-  console.log(existingUser._id);
 
   if (!existingUser) {
     return res.status(401).send({
@@ -25,11 +24,23 @@ async function getConnect(req, res) {
     });
   }
   const token = uuidv4();
-  console.log('token', token);
 
   await redisClient.set(`auth_${token}`, existingUser._id.toString(), 86400);
 
   return res.status(200).json({ token });
 }
 
-module.exports = { getConnect };
+async function getDisconnect(req, res) {
+  const token = req.headers['x-token'];
+
+  const connectedUser = await redisClient.get(`auth_${token}`);
+
+  if (!connectedUser) {
+    res.status(400).json({ error: 'Unauthorized' });
+  }
+
+  await redisClient.del(`auth_${token}`);
+  res.status(204);
+}
+
+module.exports = { getConnect, getDisconnect };
