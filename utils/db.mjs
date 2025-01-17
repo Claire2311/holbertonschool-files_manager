@@ -1,11 +1,13 @@
-// import { MongoClient } from 'mongodb';
-const { MongoClient } = require('mongodb');
+import mongodb from 'mongodb';
+// const { MongoClient } = require('mongodb');
 
 class DBClient {
   constructor() {
     const DB_HOST = process.env.DB_HOST || 'localhost';
     const DB_PORT = process.env.DB_PORT || '27017';
     const DB_DATABASE = process.env.DB_DATABASE || 'files_manager';
+
+    const { MongoClient } = mongodb;
 
     this.client = new MongoClient(`mongodb://${DB_HOST}:${DB_PORT}`, { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -35,5 +37,5 @@ class DBClient {
 
 const dbClient = new DBClient();
 
-module.exports = dbClient;
-// export default dbClient;
+// module.exports = dbClient;
+export default dbClient;
