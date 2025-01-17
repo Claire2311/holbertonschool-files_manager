@@ -1,5 +1,4 @@
 import mongodb from 'mongodb';
-// const { MongoClient } = require('mongodb');
 
 class DBClient {
   constructor() {
@@ -16,13 +15,13 @@ class DBClient {
       .catch((err) => { console.error(err); });
   }
 
-  // isAlive() {
-  //   return this.client.isConnected();
-  // }
-
   isAlive() {
-    return (this.client.topology && this.client.topology.isConnected()) || false;
+    return this.client.isConnected();
   }
+
+  // isAlive() {
+  //   return (this.client.topology && this.client.topology.isConnected()) || false;
+  // }
 
   async nbUsers() {
     const nbUsers = await this.database.collection('users').countDocuments();
@@ -37,5 +36,4 @@ class DBClient {
 
 const dbClient = new DBClient();
 
-// module.exports = dbClient;
 export default dbClient;
