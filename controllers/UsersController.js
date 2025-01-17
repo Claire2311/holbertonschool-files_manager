@@ -49,10 +49,10 @@ async function getMe(req, res) {
   const user = await users.findOne({ _id: new ObjectId(userId) });
 
   if (!user) {
-    res.status(400).json({ error: 'Unauthorized' });
+    res.status(401).json({ error: 'Unauthorized' });
   }
 
-  res.status(200).json({ id: userId, email: user.email });
+  res.json({ id: userId, email: user.email });
 }
 
 export default { postNew, getMe };
