@@ -110,16 +110,29 @@ async function getShow(req, res) {
       });
     }
 
-    const files = dbClient.database.collection('files');
+    const filesDb = dbClient.database.collection('files');
 
-    const file = await files.findOne({ userId });
+    const files = await filesDb.aggregate([
+      { $match: { userId } },
+      {
+        $project: {
+          id: '$_id', _id: 0, userId: 1, name: 1, type: 1, isPublic: 1, parentId: 1,
+        },
+      },
+    ]).toArray();
 
-    if (!file) {
+    if (!files) {
       return res.status(404).send({
         message: 'Not found',
       });
     }
-    return res.status(200).json({ file });
+
+    const formattedFiles = files.map((file) => {
+      const { id, ...rest } = file;
+      return { id, ...rest };
+    });
+
+    return res.status(200).send(formattedFiles);
   } catch (err) {
     return res.status(500).send({
       error: err,
@@ -141,8 +154,9 @@ async function getIndex(req, res) {
     const filesDb = dbClient.database.collection('files');
 
     const page = req.query.page ? parseInt(req.query.page, 10) : 0;
+    const parentId = req.query.page ? req.query.page : 0;
 
-    const query = {};
+    const query = { userId, parentId };
 
     const files = await filesDb.aggregate([
       { $match: query },
@@ -155,6 +169,12 @@ async function getIndex(req, res) {
       },
     ]).toArray();
 
+    if (files.length === 0) {
+      return res.status(404).send({
+        message: 'Not found',
+      });
+    }
+
     // organize the order so id get first
     const formattedFiles = files.map((file) => {
       const { id, ...rest } = file;
@@ -163,11 +183,63 @@ async function getIndex(req, res) {
 
     return res.send(formattedFiles);
   } catch (err) {
-    console.log(err);
     return res.status(500).send({
       error: err,
     });
   }
 }
 
-export default { postUpload, getShow, getIndex };
+// async function putPublish(req, res) {
+//   const token = req.headers['x-token'];
+
+//   try {
+//     const userId = await redisClient.get(`auth_${token}`);
+
+//     if (!userId) {
+//       return res.status(401).send({
+//         message: 'Unauthorized',
+//       });
+//     }
+
+//     const files = dbClient.database.collection('files');
+
+//     const file = await files.findOne({ userId });
+//     console.log('file', file);
+
+//     if (!file) {
+//       return res.status(404).send({
+//         message: 'Not found',
+//       });
+//     }
+//     const filter = { userId };
+//     const updateDocument = {
+//       $set: {
+//         isPublic: true,
+//       },
+//     };
+
+//     // const result = await files.updateOne(filter, updateDocument);
+
+//     const modifiedFile = await files.findOne({ userId });
+//     console.log(modifiedFile, modifiedFile);
+
+//     res.status(200).json({ file });
+//   } catch (err) {
+//     console.log(err);
+//     return res.status(500).send({
+//       error: err,
+//     });
+//   }
+// }
+
+// async function putUnpublish(req, res) {
+
+// }
+
+export default {
+  postUpload, getShow, getIndex,
+};
+
+// export default {
+//   postUpload, getShow, getIndex, putPublish, putUnpublish,
+// };
