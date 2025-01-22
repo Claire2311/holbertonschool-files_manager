@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
 import { ObjectId } from 'mongodb';
+import mime from 'mime-types';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
@@ -288,6 +289,67 @@ async function putUnpublish(req, res) {
   }
 }
 
+async function getFile(req, res) {
+  const token = req.headers['x-token'];
+  const fileId = req.params.id;
+
+  try {
+    const files = dbClient.database.collection('files');
+
+    const file = await files.findOne({ _id: new ObjectId(fileId) });
+
+    if (!file) {
+      return res.status(404).send({
+        error: 'Not found',
+      });
+    }
+
+    const userId = await redisClient.get(`auth_${token}`);
+
+    if (file.isPublic === false && (!token || file.userId !== userId)) {
+      return res.status(404).send({
+        error: 'Not found',
+      });
+    }
+
+    if (file.type === 'folder') {
+      return res.status(400).send({
+        error: "A folder doesn't have content",
+      });
+    }
+
+    const filePath = file.localPath;
+    const fileExists = await new Promise((resolve) => {
+      fs.access(filePath, fs.constants.F_OK, (err) => {
+        resolve(!err);
+      });
+    });
+
+    if (!fileExists) {
+      return res.status(404).send({
+        error: 'Not found',
+      });
+    }
+
+    const mimeType = mime.lookup(file.name);
+
+    if (!mimeType) {
+      return res.status(500).send({
+        error: 'Unable to determine MIME type for the file',
+      });
+    }
+
+    const content = fs.readFileSync(filePath).toString();
+
+    res.setHeader('Content-Type', mimeType);
+    return res.status(200).send(content);
+  } catch (err) {
+    return res.status(500).send({
+      error: err,
+    });
+  }
+}
+
 export default {
-  postUpload, getShow, getIndex, putPublish, putUnpublish,
+  postUpload, getShow, getIndex, putPublish, putUnpublish, getFile,
 };
