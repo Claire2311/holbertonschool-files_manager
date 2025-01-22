@@ -1,7 +1,7 @@
 import express from 'express';
 import router from './routes/index';
 
-const PORT = parseInt(process.env.APP_PORT || '1245', 10);
+const PORT = parseInt(process.env.APP_PORT || '5000', 10);
 
 const app = express();
 
