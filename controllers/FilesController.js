@@ -188,6 +188,106 @@ async function getIndex(req, res) {
   }
 }
 
+async function putPublish(req, res) {
+  const token = req.headers['x-token'];
+  const fileId = req.params.id;
+
+  try {
+    const userId = await redisClient.get(`auth_${token}`);
+
+    if (!userId) {
+      return res.status(401).send({
+        error: 'Unauthorized',
+      });
+    }
+
+    const files = dbClient.database.collection('files');
+
+    const file = await files.findOne({ userId, _id: new ObjectId(fileId) });
+
+    if (!file) {
+      return res.status(404).send({
+        error: 'Not found',
+      });
+    }
+    const filter = { userId, _id: new ObjectId(fileId) };
+    const updateDocument = {
+      $set: {
+        isPublic: true,
+      },
+    };
+
+    await files.updateOne(filter, updateDocument);
+
+    const modifiedFile = await files.findOne({ userId, _id: new ObjectId(fileId) });
+
+    const formattedFile = {
+      id: modifiedFile._id,
+      userId: modifiedFile.userId,
+      name: modifiedFile.name,
+      type: modifiedFile.type,
+      isPublic: modifiedFile.isPublic,
+      parentId: modifiedFile.parentId,
+    };
+
+    return res.status(200).json(formattedFile);
+  } catch (err) {
+    return res.status(500).send({
+      error: err,
+    });
+  }
+}
+
+async function putUnpublish(req, res) {
+  const token = req.headers['x-token'];
+  const fileId = req.params.id;
+
+  try {
+    const userId = await redisClient.get(`auth_${token}`);
+
+    if (!userId) {
+      return res.status(401).send({
+        error: 'Unauthorized',
+      });
+    }
+
+    const files = dbClient.database.collection('files');
+
+    const file = await files.findOne({ userId, _id: new ObjectId(fileId) });
+
+    if (!file) {
+      return res.status(404).send({
+        error: 'Not found',
+      });
+    }
+    const filter = { userId, _id: new ObjectId(fileId) };
+    const updateDocument = {
+      $set: {
+        isPublic: false,
+      },
+    };
+
+    await files.updateOne(filter, updateDocument);
+
+    const modifiedFile = await files.findOne({ userId, _id: new ObjectId(fileId) });
+
+    const formattedFile = {
+      id: modifiedFile._id,
+      userId: modifiedFile.userId,
+      name: modifiedFile.name,
+      type: modifiedFile.type,
+      isPublic: modifiedFile.isPublic,
+      parentId: modifiedFile.parentId,
+    };
+
+    return res.status(200).json(formattedFile);
+  } catch (err) {
+    return res.status(500).send({
+      error: err,
+    });
+  }
+}
+
 export default {
-  postUpload, getShow, getIndex,
+  postUpload, getShow, getIndex, putPublish, putUnpublish,
 };
