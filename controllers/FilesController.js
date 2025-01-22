@@ -98,4 +98,76 @@ async function postUpload(req, res) {
   }
 }
 
-export default { postUpload };
+async function getShow(req, res) {
+  const token = req.headers['x-token'];
+
+  try {
+    const userId = await redisClient.get(`auth_${token}`);
+
+    if (!userId) {
+      return res.status(401).send({
+        message: 'Unauthorized',
+      });
+    }
+
+    const files = dbClient.database.collection('files');
+
+    const file = await files.findOne({ userId });
+
+    if (!file) {
+      return res.status(404).send({
+        message: 'Not found',
+      });
+    }
+    return res.status(200).json({ file });
+  } catch (err) {
+    return res.status(500).send({
+      error: err,
+    });
+  }
+}
+
+async function getIndex(req, res) {
+  const token = req.headers['x-token'];
+
+  try {
+    const userId = await redisClient.get(`auth_${token}`);
+
+    if (!userId) {
+      return res.status(401).send({
+        message: 'Unauthorized',
+      });
+    }
+    const filesDb = dbClient.database.collection('files');
+
+    const page = req.query.page ? parseInt(req.query.page, 10) : 0;
+
+    const query = {};
+
+    const files = await filesDb.aggregate([
+      { $match: query },
+      { $skip: page * 20 },
+      { $limit: 20 },
+      {
+        $project: {
+          id: '$_id', _id: 0, userId: 1, name: 1, type: 1, isPublic: 1, parentId: 1,
+        },
+      },
+    ]).toArray();
+
+    // organize the order so id get first
+    const formattedFiles = files.map((file) => {
+      const { id, ...rest } = file;
+      return { id, ...rest };
+    });
+
+    return res.send(formattedFiles);
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({
+      error: err,
+    });
+  }
+}
+
+export default { postUpload, getShow, getIndex };
