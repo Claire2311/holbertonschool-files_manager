@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { ObjectId } from 'mongodb';
 import mime from 'mime-types';
+import Bull from 'bull';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
@@ -43,6 +44,8 @@ async function postUpload(req, res) {
   }
 
   try {
+    const fileQueue = new Bull('fileQueue');
+
     const files = dbClient.database.collection('files');
 
     if (parentId) {
@@ -63,6 +66,7 @@ async function postUpload(req, res) {
 
     const localPathFile = uuidv4();
 
+    // vérifie si le dossier existe, sinon il le créée
     if (!fs.existsSync(storagePath)) {
       fs.mkdirSync(storagePath, { recursive: true });
     }
@@ -84,6 +88,12 @@ async function postUpload(req, res) {
       parentId: parentId || 0,
       localPath: storagePath,
     });
+
+    if (type === 'image') {
+      await fileQueue.add({
+        userId, id: newFile.insertedId,
+      });
+    }
 
     return res.status(201).json({
       id: newFile.insertedId,
@@ -292,6 +302,7 @@ async function putUnpublish(req, res) {
 async function getFile(req, res) {
   const token = req.headers['x-token'];
   const fileId = req.params.id;
+  const { size } = req.query;
 
   try {
     const files = dbClient.database.collection('files');
@@ -318,7 +329,12 @@ async function getFile(req, res) {
       });
     }
 
-    const filePath = file.localPath;
+    let filePath = file.localPath;
+
+    if (size) {
+      filePath = `${file.localPath}_${size}`;
+    }
+
     const fileExists = await new Promise((resolve) => {
       fs.access(filePath, fs.constants.F_OK, (err) => {
         resolve(!err);
