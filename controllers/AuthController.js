@@ -22,20 +22,25 @@ async function getConnect(req, res) {
       error: 'Email or password are incorrect',
     });
   }
+  try {
+    const users = dbClient.database.collection('users');
+    const existingUser = await users.findOne({ email, password: sha1(password) });
 
-  const users = dbClient.database.collection('users');
-  const existingUser = await users.findOne({ email, password: sha1(password) });
+    if (!existingUser) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+      });
+    }
+    const token = uuidv4();
 
-  if (!existingUser) {
-    return res.status(401).send({
-      error: 'Unauthorized',
+    await redisClient.set(`auth_${token}`, existingUser._id.toString(), 86400);
+
+    return res.status(200).json({ token });
+  } catch (err) {
+    return res.status(500).json({
+      error: err,
     });
   }
-  const token = uuidv4();
-
-  await redisClient.set(`auth_${token}`, existingUser._id.toString(), 86400);
-
-  return res.status(200).json({ token });
 }
 
 async function getDisconnect(req, res) {
