@@ -7,14 +7,14 @@ async function postNew(req, res) {
   const { email, password } = req.body;
 
   if (!email) {
-    return res.status(400).send({
-      message: 'Missing email',
+    return res.status(400).json({
+      error: 'Missing email',
     });
   }
 
   if (!password) {
-    return res.status(400).send({
-      message: 'Missing password',
+    return res.status(400).json({
+      error: 'Missing password',
     });
   }
 
@@ -25,7 +25,7 @@ async function postNew(req, res) {
     const alreadyUser = await users.findOne(query);
 
     if (alreadyUser) {
-      return res.status(400).send({
+      return res.status(400).json({
         error: 'Already exist',
       });
     }
@@ -34,7 +34,7 @@ async function postNew(req, res) {
 
     return res.status(201).json({ id: newUser.insertedId, email });
   } catch (err) {
-    return res.status(500).send({
+    return res.status(500).json({
       error: err,
     });
   }

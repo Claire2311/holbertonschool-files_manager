@@ -15,6 +15,14 @@ async function getConnect(req, res) {
 
   const [email, password] = decodedCredentials.split(':');
 
+  const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!email || email.match(regexEmail) || !password) {
+    return res.status(400).json({
+      error: 'Email or password are incorrect',
+    });
+  }
+
   const users = dbClient.database.collection('users');
   const existingUser = await users.findOne({ email, password: sha1(password) });
 
