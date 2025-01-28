@@ -317,7 +317,7 @@ async function getFile(req, res) {
 
     const userId = await redisClient.get(`auth_${token}`);
 
-    if (file.isPublic === false && (!token || file.userId !== userId)) {
+    if (file.isPublic === false || (!token || file.userId !== userId || !userId)) {
       return res.status(404).json({
         error: 'Not found',
       });
