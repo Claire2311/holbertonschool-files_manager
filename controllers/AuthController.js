@@ -7,22 +7,26 @@ import redisClient from '../utils/redis';
 async function getConnect(req, res) {
   const authHeader = req.headers.authorization;
 
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
   const encodedCredentials = authHeader
     .trim()
     .replace(/Basic\s+/i, '');
-
-  const decodedCredentials = Buffer.from(encodedCredentials, 'base64').toString('ascii');
-
-  const [email, password] = decodedCredentials.split(':');
-
-  const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!email || email.match(regexEmail) || !password) {
-    return res.status(400).json({
-      error: 'Email or password are incorrect',
-    });
-  }
   try {
+    const decodedCredentials = Buffer.from(encodedCredentials, 'base64').toString('ascii');
+
+    const [email, password] = decodedCredentials.split(':');
+
+    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email || !email.match(regexEmail) || !password) {
+      return res.status(400).json({
+        error: 'Email or password are incorrect',
+      });
+    }
+
     const users = dbClient.database.collection('users');
     const existingUser = await users.findOne({ email, password: sha1(password) });
 

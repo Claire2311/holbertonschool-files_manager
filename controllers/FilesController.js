@@ -20,25 +20,25 @@ async function postUpload(req, res) {
   const userId = await redisClient.get(`auth_${token}`);
 
   if (!userId) {
-    return res.status(401).send({
+    return res.status(401).json({
       error: 'Unauthorized',
     });
   }
 
   if (!name) {
-    return res.status(400).send({
+    return res.status(400).json({
       error: 'Missing name',
     });
   }
 
   if (!type || !acceptedType.includes(type)) {
-    return res.status(400).send({
+    return res.status(400).json({
       error: 'Missing type',
     });
   }
 
   if (!data && type !== 'folder') {
-    return res.status(400).send({
+    return res.status(400).json({
       error: 'Missing data',
     });
   }
@@ -52,13 +52,13 @@ async function postUpload(req, res) {
       const file = await files.findOne({ parentId });
 
       if (!file) {
-        return res.status(400).send({
+        return res.status(400).json({
           error: 'Parent not found',
         });
       }
 
       if (file && file.type !== 'folder') {
-        return res.status(400).send({
+        return res.status(400).json({
           error: 'Parent is not a folder',
         });
       }
@@ -104,7 +104,7 @@ async function postUpload(req, res) {
       parentId: parentId || 0,
     });
   } catch (err) {
-    return res.status(500).send({
+    return res.status(500).json({
       error: err,
     });
   }
@@ -118,7 +118,7 @@ async function getShow(req, res) {
     const userId = await redisClient.get(`auth_${token}`);
 
     if (!userId) {
-      return res.status(401).send({
+      return res.status(401).json({
         error: 'Unauthorized',
       });
     }
@@ -128,7 +128,7 @@ async function getShow(req, res) {
     const file = await filesDb.findOne({ userId, _id: new ObjectId(fileId) });
 
     if (!file) {
-      return res.status(404).send({
+      return res.status(404).json({
         error: 'Not found',
       });
     }
@@ -144,7 +144,7 @@ async function getShow(req, res) {
 
     return res.status(200).send(formattedFile);
   } catch (err) {
-    return res.status(500).send({
+    return res.status(500).json({
       error: err,
     });
   }
@@ -157,7 +157,7 @@ async function getIndex(req, res) {
     const userId = await redisClient.get(`auth_${token}`);
 
     if (!userId) {
-      return res.status(401).send({
+      return res.status(401).json({
         error: 'Unauthorized',
       });
     }
@@ -180,7 +180,7 @@ async function getIndex(req, res) {
     ]).toArray();
 
     if (files.length === 0) {
-      return res.status(404).send({
+      return res.status(404).json({
         error: 'Not found',
       });
     }
@@ -193,7 +193,7 @@ async function getIndex(req, res) {
 
     return res.send(formattedFiles);
   } catch (err) {
-    return res.status(500).send({
+    return res.status(500).json({
       error: err,
     });
   }
@@ -207,7 +207,7 @@ async function putPublish(req, res) {
     const userId = await redisClient.get(`auth_${token}`);
 
     if (!userId) {
-      return res.status(401).send({
+      return res.status(401).json({
         error: 'Unauthorized',
       });
     }
@@ -217,7 +217,7 @@ async function putPublish(req, res) {
     const file = await files.findOne({ userId, _id: new ObjectId(fileId) });
 
     if (!file) {
-      return res.status(404).send({
+      return res.status(404).json({
         error: 'Not found',
       });
     }
@@ -243,7 +243,7 @@ async function putPublish(req, res) {
 
     return res.status(200).json(formattedFile);
   } catch (err) {
-    return res.status(500).send({
+    return res.status(500).json({
       error: err,
     });
   }
@@ -257,7 +257,7 @@ async function putUnpublish(req, res) {
     const userId = await redisClient.get(`auth_${token}`);
 
     if (!userId) {
-      return res.status(401).send({
+      return res.status(401).json({
         error: 'Unauthorized',
       });
     }
@@ -267,7 +267,7 @@ async function putUnpublish(req, res) {
     const file = await files.findOne({ userId, _id: new ObjectId(fileId) });
 
     if (!file) {
-      return res.status(404).send({
+      return res.status(404).json({
         error: 'Not found',
       });
     }
@@ -293,7 +293,7 @@ async function putUnpublish(req, res) {
 
     return res.status(200).json(formattedFile);
   } catch (err) {
-    return res.status(500).send({
+    return res.status(500).json({
       error: err,
     });
   }
@@ -310,7 +310,7 @@ async function getFile(req, res) {
     const file = await files.findOne({ _id: new ObjectId(fileId) });
 
     if (!file) {
-      return res.status(404).send({
+      return res.status(404).json({
         error: 'Not found',
       });
     }
@@ -318,13 +318,13 @@ async function getFile(req, res) {
     const userId = await redisClient.get(`auth_${token}`);
 
     if (file.isPublic === false && (!token || file.userId !== userId)) {
-      return res.status(404).send({
+      return res.status(404).json({
         error: 'Not found',
       });
     }
 
     if (file.type === 'folder') {
-      return res.status(400).send({
+      return res.status(400).json({
         error: "A folder doesn't have content",
       });
     }
@@ -342,7 +342,7 @@ async function getFile(req, res) {
     });
 
     if (!fileExists) {
-      return res.status(404).send({
+      return res.status(404).json({
         error: 'Not found',
       });
     }
@@ -350,7 +350,7 @@ async function getFile(req, res) {
     const mimeType = mime.lookup(file.name);
 
     if (!mimeType) {
-      return res.status(500).send({
+      return res.status(500).json({
         error: 'Unable to determine MIME type for the file',
       });
     }
@@ -358,9 +358,9 @@ async function getFile(req, res) {
     const content = fs.readFileSync(filePath).toString();
 
     res.setHeader('Content-Type', mimeType);
-    return res.status(200).send(content);
+    return res.status(200).json(content);
   } catch (err) {
-    return res.status(500).send({
+    return res.status(500).json({
       error: err,
     });
   }
