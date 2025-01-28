@@ -50,14 +50,23 @@ async function getConnect(req, res) {
 async function getDisconnect(req, res) {
   const token = req.headers['x-token'];
 
-  const connectedUser = await redisClient.get(`auth_${token}`);
-
-  if (!connectedUser) {
-    res.status(401).json({ error: 'Unauthorized' });
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
+  try {
+    const connectedUser = await redisClient.get(`auth_${token}`);
 
-  await redisClient.del(`auth_${token}`);
-  res.status(204);
+    if (!connectedUser) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    await redisClient.del(`auth_${token}`);
+    return res.status(204);
+  } catch (err) {
+    return res.status(500).json({
+      error: err,
+    });
+  }
 }
 
 export default { getConnect, getDisconnect };
