@@ -49,7 +49,7 @@ async function postUpload(req, res) {
     const files = dbClient.database.collection('files');
 
     if (parentId) {
-      const file = await files.findOne({ parentId });
+      const file = await files.findOne({ _id: new ObjectId(parentId) });
 
       if (!file) {
         return res.status(400).json({
@@ -80,12 +80,28 @@ async function postUpload(req, res) {
       fs.writeFileSync(storagePath, decodedData);
     }
 
+    if (type === 'folder') {
+      const newFolder = await files.insertOne({
+        userId: new ObjectId(userId),
+        name,
+        type,
+        parentId: parentId ? new ObjectId(parentId) : 0,
+      });
+
+      return res.status(201).json({
+        id: newFolder.insertedId,
+        userId,
+        name,
+        type,
+        parentId: parentId || 0,
+      });
+    }
     const newFile = await files.insertOne({
-      userId,
+      userId: new ObjectId(userId),
       name,
       type,
       isPublic: isPublic || false,
-      parentId: parentId || 0,
+      parentId: parentId ? new ObjectId(parentId) : 0,
       localPath: storagePath,
     });
 
