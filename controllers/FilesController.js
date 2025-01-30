@@ -182,6 +182,17 @@ async function getIndex(req, res) {
     const page = req.query.page ? parseInt(req.query.page, 10) : 0;
     const parentId = req.query.parentId ? new ObjectId(req.query.parentId) : 0;
 
+    if (req.query.parentId) {
+      const folderParentId = await filesDb.find({
+        userId: new ObjectId(userId),
+        parentId: new ObjectId(parentId),
+        type: 'folder',
+      });
+      if (!folderParentId) {
+        return [];
+      }
+    }
+
     const query = { userId: new ObjectId(userId), parentId };
 
     const files = await filesDb.aggregate([
