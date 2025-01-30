@@ -141,7 +141,7 @@ async function getShow(req, res) {
 
     const filesDb = dbClient.database.collection('files');
 
-    const file = await filesDb.findOne({ userId, _id: new ObjectId(fileId) });
+    const file = await filesDb.findOne({ userId: new ObjectId(userId), _id: new ObjectId(fileId) });
 
     if (!file) {
       return res.status(404).json({
@@ -180,9 +180,9 @@ async function getIndex(req, res) {
     const filesDb = dbClient.database.collection('files');
 
     const page = req.query.page ? parseInt(req.query.page, 10) : 0;
-    const parentId = req.query.parentId || 0;
+    const parentId = req.query.parentId ? new ObjectId(req.query.parentId) : 0;
 
-    const query = { userId, parentId };
+    const query = { userId: new ObjectId(userId), parentId };
 
     const files = await filesDb.aggregate([
       { $match: query },
